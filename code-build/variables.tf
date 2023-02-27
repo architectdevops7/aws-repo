@@ -1,93 +1,65 @@
-variable "project_name" {
-  description = "Name of the CodeBuild project"
+# Required variables
+variable "app_name" {
+  type        = string
+  description = "Name of the CodeDeploy application"
 }
 
-variable "source_type" {
-  description = "Type of source for the CodeBuild project"
-  default     = "GITHUB"
+variable "deployment_group_name" {
+  type        = string
+  description = "Name of the CodeDeploy deployment group"
 }
 
-variable "source_location" {
-  description = "Location of the source for the CodeBuild project"
+variable "lambda_function_name" {
+  type        = string
+  description = "Name of the Lambda function"
 }
 
-variable "compute_type" {
-  description = "Compute type for the CodeBuild project"
-  default     = "BUILD_GENERAL1_SMALL"
+variable "s3_bucket_name" {
+  type        = string
+  description = "Name of the S3 bucket containing the Lambda function source code"
 }
 
-variable "buildspec_path" {
-  description = "Path to the buildspec file for the CodeBuild project"
-  default     = "buildspec.yml"
+variable "s3_object_key" {
+  type        = string
+  description = "Key of the S3 object containing the Lambda function source code"
 }
 
-variable "service_role_arn" {
-  description = "ARN of the IAM service role for the CodeBuild project"
+# Optional variables
+variable "deployment_config_name" {
+  type        = string
+  default     = "CodeDeployDefault.LambdaAllAtOnce"
+  description = "Name of the CodeDeploy deployment configuration to use"
 }
 
-variable "build_timeout" {
-  description = "Timeout in minutes for the CodeBuild project"
-  default     = 60
+variable "auto_rollback_enabled" {
+  type        = bool
+  default     = true
+  description = "Whether to enable auto rollback on deployment failure"
 }
 
-variable "cache_type" {
-  description = "Type of cache for the CodeBuild project"
-  default     = "S3"
+variable "iam_role_name" {
+  type        = string
+  default     = "codedeploy-lambda-role"
+  description = "Name of the IAM role to create for CodeDeploy to use with the Lambda function"
 }
 
-variable "cache_location" {
-  description = "Location of the cache for the CodeBuild project"
+variable "iam_role_assume_policy" {
+  type        = string
+  default     = jsonencode({
+    Version: "2012-10-17",
+    Statement: [{
+      Effect: "Allow",
+      Principal: {
+        Service: "codedeploy.amazonaws.com"
+      },
+      Action: "sts:AssumeRole"
+    }]
+  })
+  description = "JSON policy document defining who can assume the IAM role for CodeDeploy to use with the Lambda function"
 }
 
-variable "artifact_type" {
-  description = "Type of artifact for the CodeBuild project"
-  default     = "S3"
+variable "iam_role_inline_policies" {
+  type        = map(any)
+  default     = {}
+  description = "Map of JSON policy documents to attach as inline policies to the IAM role for CodeDeploy to use with the Lambda function"
 }
-
-variable "artifact_location" {
-  description = "Location of the artifact for the CodeBuild project"
-}
-
-variable "artifact_name" {
-  description = "Name of the artifact for the CodeBuild project"
-  default     = "app"
-}
-
-variable "artifact_namespace_type" {
-  description = "Namespace type of the artifact for the CodeBuild project"
-  default     = "BUILD_ID"
-}
-
-variable "artifact_packaging" {
-  description = "Packaging type of the artifact for the CodeBuild project"
-  default     = "ZIP"
-}
-
-variable "override_artifact_name" {
-  description = "Overrides the artifact name if set"
-}
-
-variable "artifact_encryption_disabled" {
-  description = "Whether artifact encryption is disabled or not"
-  default     = false
-}
-
-variable "image" {
-  description = "The Docker image to use for the build environment"
-  default     = "aws/codebuild/amazonlinux2-x86_64-standard:
-}
-
-variable "environment_type" {
-  description = "Type of environment for the CodeBuild project"
-  default     = "LINUX_CONTAINER"
-}
-
-variable "var1" {
-  description = "An environment variable to pass to the build environment"
-}
-
-variable "privileged_mode" {
-  description = "Whether or not to run the build in privileged mode"
-  default     = false
-}
-
