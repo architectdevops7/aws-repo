@@ -1,0 +1,51 @@
+schemaVersion: "2.2"
+description: Run a PowerShell command on Windows instances and a shell command on Linux instances
+parameters:
+  NodeExporterVersion:
+    type: "String"
+    default: "1.2.2"
+    description: "The version of Node Exporter to install"
+parameters:
+  version:
+    type: "String"
+    description: "The version of Prometheus Windows Exporter to install"
+    default: "0.16.0"
+    
+mainSteps:
+- precondition:
+    StringEquals: [platformType, Windows]
+  action: "aws:runPowerShellScript"
+  name: runPowerShellScript
+  inputs:
+    runCommand:
+    - "$version = '{{ version }}'"
+    - "$AgentURL = \"https://github.com/prometheus-community/windows_exporter/releases/download/v${version}/windows_exporter-${version}-386.msi\""
+    - "$AbsoluteCurrPath = $(Get-Location).Path"
+    - "$AbsolutePathMSI = \"${AbsoluteCurrPath}\\tmp\\windows-exporter\\windows_exporter.msi\""
+    - "$EnabledCollectors = \"[defaults],cpu,cs,logical_disk,memory,net,os,process,service,system,tcp\""
+    - "$ServiceName = \"windows_exporter\""
+    - "$TempDirectoryToCreate =  \"$AbsoluteCurrPath\\tmp\\windows-exporter\""
+    - "if (-not (Test-Path -LiteralPath $TempDirectoryToCreate)) {"
+    - "  try {"
+    - "    New-Item -Path $TempDirectoryToCreate -ItemType Directory -ErrorAction Stop | Out-Null #-Force"
+    - "  } catch {"
+    - "    Write-Error -Message \"Unable to create directory '$TempDirectoryToCreate'. Error was: $_\" -ErrorAction Stop"
+    - "  }"
+    - "  Write-Output \"Successfully created directory '$TempDirectoryToCreate'.\""
+    - "} else {"
+    - "  Write-Output \"Directory already existed\""
+    - "}"
+    - "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
+    - "Invoke-WebRequest $AgentURL -OutFile $AbsolutePathMSI"
+    - "(Start-Process \"msiexec.exe\" -ArgumentList \"/i ${AbsolutePathMSI} ENABLED_COLLECTORS=$EnabledCollectors /qb!\" -NoNewWindow -Wait -PassThru).ExitCode"
+    - "$Service = Get-Service -Name \"$ServiceName\""
+    - "if ($Service.Status -eq \"running\") {"
+    - "  Write-Output \"$ServiceName is running\""
+    - "} else {"
+    - "  Write-Output \"$ServiceName status is: $Service.Status\""
+    - "}"
+    - "if (Test-Path $AbsoluteCurrPath\\tmp\\windows-exporter -PathType Container) {"
+    - "  Remove-Item -Recurse -Force $AbsoluteCurrPath\\tmp\\windows-exporter"
+    - "} else {"
+    - "  Write-Output \"TMP path not available\""
+    - "}"
